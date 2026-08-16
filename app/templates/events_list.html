@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Eventos — Listagem{% endblock %}
+
+{% block content %}
+    <h2>Eventos cadastrados</h2>
+
+    {% if events %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Data</th>
+                    <th>Organizador (id)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for event in events %}
+                <tr>
+                    <td><a href="/pages/events/{{ event.id }}">{{ event.name }}</a></td>
+                    <td>{{ event.date }}</td>
+                    <td>{{ event.organizer_id }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>Nenhum evento cadastrado ainda.</p>
+    {% endif %}
+{% endblock %}

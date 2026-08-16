@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}Evento — {{ event.name }}{% endblock %}
+
+{% block content %}
+    <p><a href="/pages/events">&larr; voltar para a listagem</a></p>
+
+    <h2>{{ event.name }}</h2>
+    <ul>
+        <li><strong>Data:</strong> {{ event.date }}</li>
+        <li><strong>Local:</strong> {{ event.location }}</li>
+        <li><strong>Organizador (id):</strong> {{ event.organizer_id }}</li>
+    </ul>
+{% endblock %}

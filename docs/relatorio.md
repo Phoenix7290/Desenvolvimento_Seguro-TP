@@ -1,12 +1,3 @@
----
-title: "TP — Ambiente Seguro em Programação"
-subtitle: "eventos-api — Relatório técnico"
-author: "Phoenix7290"
-date: \today
-lang: pt-BR
-geometry: margin=2.5cm
----
-
 # Visão geral
 
 Este relatório documenta as decisões técnicas tomadas na construção do `eventos-api`,

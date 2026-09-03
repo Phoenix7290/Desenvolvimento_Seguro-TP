@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from app.routes import events, pages
+from app.routes import auth, events, pages
 
 app = FastAPI(title="eventos-api")
 
@@ -11,5 +11,6 @@ def read_root():
     return {"status": "ok", "service": "eventos-api"}
 
 
+app.include_router(auth.router)
 app.include_router(events.router)
 app.include_router(pages.router)

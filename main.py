@@ -2,12 +2,17 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.routes import auth, events, inscricoes, pages
+from app.database.engine import create_db_and_tables
 
 from app.core.limiter import limiter
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
 app = FastAPI(title="eventos-api")
+
+@app.on_event("startup")
+def on_startup():
+    create_db_and_tables()
 
 ALLOWED_ORIGINS = [
     "http://localhost:3000",       # frontend local, ajuste pro seu domínio real

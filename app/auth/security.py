@@ -1,11 +1,13 @@
 from datetime import datetime, timedelta, timezone
 
+from app.core.settings import settings
+
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-SECRET_KEY = "dev-secret-key-troque-em-producao"
+SECRET_KEY = settings.secret_key
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 MFA_PENDING_TOKEN_EXPIRE_MINUTES = 5

@@ -1,6 +1,6 @@
 from enum import Enum
 
-from pydantic import BaseModel, ConfigDict
+from sqlmodel import Field, SQLModel
 
 
 class Role(str, Enum):
@@ -9,18 +9,24 @@ class Role(str, Enum):
     admin = "admin"
 
 
-class UserCreate(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+class UserBase(SQLModel):
+    username: str = Field(index=True)
+    role: Role = Role.organizer
+
+
+class User(UserBase, table=True):
+    __tablename__ = "users"
+    username: str = Field(primary_key=True)
+    hashed_password: str
+    mfa_enabled: bool = False
+
+
+class UserCreate(SQLModel):
+    model_config = {"extra": "forbid"}
     username: str
     password: str
     role: Role = Role.organizer
 
 
-class UserPublic(BaseModel):
-    username: str
-    role: Role
-
-
-class UserInDB(UserPublic):
-    hashed_password: str
-    mfa_enabled: bool = False
+class UserPublic(UserBase):
+    pass

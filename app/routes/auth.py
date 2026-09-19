@@ -1,6 +1,10 @@
 from fastapi import APIRouter, Depends, Form, HTTPException, status, Request
 from pydantic import BaseModel
+from sqlmodel import Session
+
 from app.core.limiter import limiter
+from app.database.engine import get_session
+from app.models.user import Role, User, UserCreate, UserPublic
 
 from app.auth.dependencies import require_role
 from app.auth.security import (
@@ -14,8 +18,7 @@ from app.auth.security import (
     verify_client_secret,
     verify_password,
 )
-from app.database.db import clients_db, get_client, get_user, users_db
-from app.models.user import Role, UserCreate, UserPublic
+from app.database.db import clients_db, get_client
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -28,20 +31,22 @@ class MfaVerifyRequest(BaseModel):
 class ClientRegisterRequest(BaseModel):
     client_id: str
     client_secret: str
-    scope: str 
+    scope: str
 
 
 @router.post("/register", response_model=UserPublic)
-def register(user: UserCreate):
-    if get_user(user.username) is not None:
+def register(user: UserCreate, session: Session = Depends(get_session)):
+    if session.get(User, user.username) is not None:
         raise HTTPException(status_code=400, detail="Username já cadastrado")
 
-    users_db[user.username] = {
-        "username": user.username,
-        "role": user.role,
-        "hashed_password": get_password_hash(user.password),
-    }
-    return UserPublic(username=user.username, role=user.role)
+    db_user = User(
+        username=user.username,
+        role=user.role,
+        hashed_password=get_password_hash(user.password),
+    )
+    session.add(db_user)
+    session.commit()
+    return UserPublic(username=db_user.username, role=db_user.role)
 
 
 @router.post("/clients/register")
@@ -64,6 +69,7 @@ def register_client(
 @limiter.limit("5/minute")
 def login(
     request: Request,
+    session: Session = Depends(get_session),
     grant_type: str = Form(default="password"),
     username: str | None = Form(default=None),
     password: str | None = Form(default=None),
@@ -82,23 +88,23 @@ def login(
         access_token = create_client_token(client["client_id"], client["scope"])
         return {"access_token": access_token, "token_type": "bearer"}
 
-    user = get_user(username or "")
-    if user is None or not verify_password(password or "", user["hashed_password"]):
+    user = session.get(User, username or "")
+    if user is None or not verify_password(password or "", user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Usuário ou senha incorretos",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    if user["role"] == Role.admin:
-        temp_token = create_mfa_pending_token(user["username"], user["role"])
+    if user.role == Role.admin:
+        temp_token = create_mfa_pending_token(user.username, user.role)
         return {
             "mfa_required": True,
             "temp_token": temp_token,
             "detail": "Senha correta. Informe o código MFA em /auth/mfa/verify.",
         }
 
-    access_token = create_access_token(user["username"], user["role"])
+    access_token = create_access_token(user.username, user.role)
     return {"access_token": access_token, "token_type": "bearer"}
 
 

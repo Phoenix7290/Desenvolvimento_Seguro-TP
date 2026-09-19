@@ -1,6 +1,6 @@
 from enum import Enum
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class Role(str, Enum):
@@ -10,6 +10,7 @@ class Role(str, Enum):
 
 
 class UserCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     username: str
     password: str
     role: Role = Role.organizer

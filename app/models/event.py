@@ -1,8 +1,9 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class EventCreate(BaseModel):
-
+    
+    model_config = ConfigDict(extra="forbid")
     name: str
     date: str
     location: str
@@ -23,7 +24,8 @@ class EventInternal(EventPublic):
 
 
 class EventUpdate(BaseModel):
-
+    
+    model_config = ConfigDict(extra="forbid")
     name: str | None = None
     date: str | None = None
     location: str | None = None

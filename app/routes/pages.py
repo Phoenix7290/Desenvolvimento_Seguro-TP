@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.templating import Jinja2Templates
 
 from app.auth.dependencies import get_current_user
-from app.database.db import events_db
+from app.database.db import events_db, comments_db
 from app.models.user import UserPublic
 
 router = APIRouter(prefix="/pages", tags=["pages"])
@@ -21,14 +21,12 @@ def list_events_page(
 
 
 @router.get("/events/{event_id}")
-def event_detail_page(
-    request: Request,
-    event_id: int,
-    current_user: UserPublic = Depends(get_current_user),
-):
+def event_detail_page(request: Request, event_id: int, current_user: UserPublic = Depends(get_current_user)):
     if event_id not in events_db:
         raise HTTPException(status_code=404, detail="Event not found")
     event = events_db[event_id]
+    comments = comments_db.get(event_id, [])
     return templates.TemplateResponse(
-        request=request, name="event_detail.html", context={"event": event}
+        request=request, name="event_detail.html",
+        context={"event": event, "comments": comments},
     )

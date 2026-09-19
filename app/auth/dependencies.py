@@ -4,6 +4,7 @@ from fastapi.security import OAuth2PasswordBearer
 from app.auth.security import decode_token
 from app.database.db import events_db, get_user
 from app.models.user import Role, UserPublic
+from app.database.db import events_db, get_user, inscricoes_db
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
 
@@ -41,25 +42,38 @@ def get_current_user(token: str = Depends(oauth2_scheme)) -> UserPublic:
         )
     return UserPublic(username=user["username"], role=user["role"])
 
+def _check_ownership(
+    current_user: UserPublic, resource: dict | None, owner_field: str
+) -> UserPublic:
+    """
+    Lógica de ownership centralizada (Exercício 4) — única fonte de verdade
+    reaproveitada por qualquer recurso sensível do eventos-api, corrigindo a
+    falha do Exercício 3 sem repetir a checagem endpoint por endpoint.
+    """
+    if resource is None:
+        raise HTTPException(status_code=404, detail="Recurso não encontrado")
+    if current_user.role == Role.admin:
+        return current_user
+    if resource.get(owner_field) != current_user.username:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Você não tem permissão sobre este recurso",
+        )
+    return current_user
 
 def require_event_owner(
     event_id: int, current_user: UserPublic = Depends(get_current_user)
 ) -> UserPublic:
-    event = events_db.get(event_id)
-    if event is None:
-        raise HTTPException(status_code=404, detail="Event not found")
-
-    if current_user.role == Role.admin:
-        return current_user
-
-    if event["organizer_id"] != current_user.username:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Apenas o organizador dono do evento pode editá-lo",
-        )
-    return current_user
+    return _check_ownership(current_user, events_db.get(event_id), "organizer_id")
 
 
+def require_inscricao_owner(
+    inscricao_id: int, current_user: UserPublic = Depends(get_current_user)
+) -> UserPublic:
+    return _check_ownership(
+        current_user, inscricoes_db.get(inscricao_id), "participante_id"
+    )
+    
 def require_role(*allowed_roles: Role):
 
     def checker(current_user: UserPublic = Depends(get_current_user)) -> UserPublic:
@@ -92,3 +106,4 @@ def require_scope(required_scope: str):
         return payload
 
     return checker
+

@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, Form, HTTPException, status
+from fastapi import APIRouter, Depends, Form, HTTPException, status, Request
 from pydantic import BaseModel
+from app.core.limiter import limiter
 
 from app.auth.dependencies import require_role
 from app.auth.security import (
@@ -60,7 +61,9 @@ def register_client(
 
 
 @router.post("/token")
+@limiter.limit("5/minute")
 def login(
+    request: Request,
     grant_type: str = Form(default="password"),
     username: str | None = Form(default=None),
     password: str | None = Form(default=None),

@@ -11,4 +11,8 @@
         <li><strong>Local:</strong> {{ event.location }}</li>
         <li><strong>Organizador (id):</strong> {{ event.organizer_id }}</li>
     </ul>
+    <h3>Comentários</h3>
+{% for c in comments %}
+    <p><strong>{{ c.autor }}:</strong> {{ c.texto }}</p>
+{% endfor %}
 {% endblock %}
